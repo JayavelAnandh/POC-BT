@@ -22,7 +22,6 @@ const App: React.FC = () => {
   // const mockDevices: Device[] = [
   //   {
   //     id: '1',
-
   //     localName: 'Device 1',
   //     manufacturerData: '',
   //     serviceData: {},
@@ -50,7 +49,6 @@ const App: React.FC = () => {
   //   },
   //   {
   //     id: '2',
-  //     name: 'Device 2',
   //     localName: 'Device 2',
   //     manufacturerData: '',
   //     serviceData: {},
@@ -122,6 +120,7 @@ const App: React.FC = () => {
     },
     [manager],
   );
+
   const refreshAvailableDevices = () => {
     try {
       setDevices([]);
@@ -133,8 +132,10 @@ const App: React.FC = () => {
         if (device) {
           console.log('Found Device:', device.name, device.id);
           setDevices(prevDevices => {
-            // Add all found devices to the state
-            return [...prevDevices, device];
+            // Add all found devices to the state, ensuring unique ids
+            return prevDevices.find(d => d.id === device.id)
+              ? prevDevices
+              : [...prevDevices, device];
           });
         }
       });
@@ -148,6 +149,7 @@ const App: React.FC = () => {
       Alert.alert('Failed to refresh');
     }
   };
+
   const scanAndConnect = useCallback(async () => {
     const permissionsGranted = await requestPermissions();
     if (!permissionsGranted) {
@@ -173,8 +175,10 @@ const App: React.FC = () => {
           if (device) {
             console.log('Found Device:', device.name, device.id);
             setDevices(prevDevices => {
-              // Add all found devices to the state
-              return [...prevDevices, device];
+              // Add all found devices to the state, ensuring unique ids
+              return prevDevices.find(d => d.id === device.id)
+                ? prevDevices
+                : [...prevDevices, device];
             });
           }
         });
@@ -237,7 +241,8 @@ const App: React.FC = () => {
     disconnectFromDevice();
     await AsyncStorage.removeItem('connectedDeviceId');
   };
-  var styles = StyleSheet.create({
+
+  const styles = StyleSheet.create({
     topBar: {
       display: 'flex',
       flexDirection: 'row',
@@ -292,6 +297,7 @@ const App: React.FC = () => {
       fontFamily: 'Helvetica',
     },
   });
+
   return (
     <SafeAreaView>
       <View style={styles.topBar}>
@@ -315,7 +321,7 @@ const App: React.FC = () => {
             <Text
               style={
                 connectedDevice?.id === item.id
-                  ? (styles.devices, styles.condition)
+                  ? [styles.devices, styles.condition]
                   : styles.devices
               }>
               {item.name

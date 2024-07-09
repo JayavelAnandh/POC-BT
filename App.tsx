@@ -218,7 +218,7 @@ const App: React.FC = () => {
       try {
         await connectedDevice.cancelConnection();
         setConnectedDevice(null);
-        await AsyncStorage.removeItem('connectedDeviceId');
+        //await AsyncStorage.removeItem('connectedDeviceId'); - commented coz we not wanna forget the id on disconnect
         console.log('Disconnected from device');
         Alert.alert('Disconnected from device');
         refreshAvailableDevices();

@@ -22,7 +22,7 @@ const App: React.FC = () => {
   // const mockDevices: Device[] = [
   //   {
   //     id: '1',
-  //     name: 'Device 1',
+
   //     localName: 'Device 1',
   //     manufacturerData: '',
   //     serviceData: {},
@@ -108,12 +108,15 @@ const App: React.FC = () => {
   const connectToDevice = useCallback(
     async (deviceId: string) => {
       try {
+        // setConnectedDevice(mockDevices[0]);
+        // await AsyncStorage.setItem('connectedDeviceId', mockDevices[0].id);
         const device = await manager.connectToDevice(deviceId);
         await device.discoverAllServicesAndCharacteristics();
         setConnectedDevice(device);
         await AsyncStorage.setItem('connectedDeviceId', device.id);
         console.log('Connected to device:', device.id);
       } catch (error) {
+        Alert.alert('Failed to connect to device:', deviceId);
         console.error('Failed to connect to device:', error);
       }
     },
@@ -121,6 +124,7 @@ const App: React.FC = () => {
   );
   const refreshAvailableDevices = () => {
     try {
+      setDevices([]);
       manager.startDeviceScan(null, null, (error, device) => {
         if (error) {
           console.error('Device Scan Error:', error);
@@ -129,10 +133,8 @@ const App: React.FC = () => {
         if (device) {
           console.log('Found Device:', device.name, device.id);
           setDevices(prevDevices => {
-            if (!prevDevices.find(d => d.id === device.id)) {
-              return [...prevDevices, device];
-            }
-            return prevDevices;
+            // Add all found devices to the state
+            return [...prevDevices, device];
           });
         }
       });
@@ -143,6 +145,7 @@ const App: React.FC = () => {
       }, 10000); // Stop scanning after 10 seconds
     } catch (error) {
       console.error('Failed to refresh', error);
+      Alert.alert('Failed to refresh');
     }
   };
   const scanAndConnect = useCallback(async () => {
@@ -158,18 +161,20 @@ const App: React.FC = () => {
       if (storedDeviceId) {
         await connectToDevice(storedDeviceId);
       } else {
+        // Clear the devices state before starting a new scan
+        setDevices([]);
+
         manager.startDeviceScan(null, null, (error, device) => {
           if (error) {
             console.error('Device Scan Error:', error);
+            Alert.alert('Device Scan Error');
             return;
           }
           if (device) {
             console.log('Found Device:', device.name, device.id);
             setDevices(prevDevices => {
-              if (!prevDevices.find(d => d.id === device.id)) {
-                return [...prevDevices, device];
-              }
-              return prevDevices;
+              // Add all found devices to the state
+              return [...prevDevices, device];
             });
           }
         });
@@ -181,6 +186,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to retrieve the connected device ID:', error);
+      Alert.alert('Failed to retrieve the connected device ID');
     }
   }, [manager, connectToDevice]);
 
@@ -212,7 +218,7 @@ const App: React.FC = () => {
       try {
         await connectedDevice.cancelConnection();
         setConnectedDevice(null);
-        // await AsyncStorage.removeItem('connectedDeviceId');
+        await AsyncStorage.removeItem('connectedDeviceId');
         console.log('Disconnected from device');
         Alert.alert('Disconnected from device');
         refreshAvailableDevices();
@@ -277,6 +283,14 @@ const App: React.FC = () => {
       padding: 5,
       textAlign: 'center',
     },
+    condition: {
+      backgroundColor: 'white',
+      fontSize: 16,
+      marginLeft: 8,
+      fontWeight: 'bold',
+      color: 'black',
+      fontFamily: 'Helvetica',
+    },
   });
   return (
     <SafeAreaView>
@@ -298,8 +312,15 @@ const App: React.FC = () => {
           <TouchableOpacity
             onPress={() => handleDevicePress(item)}
             style={styles.btn}>
-            <Text style={styles.devices}>
-              {item.name ? item.name : 'Unnamed Device'}
+            <Text
+              style={
+                connectedDevice?.id === item.id
+                  ? (styles.devices, styles.condition)
+                  : styles.devices
+              }>
+              {item.name
+                ? item.name
+                : `Unnamed Device , ${item?.id} , ${item?.localName}`}
             </Text>
           </TouchableOpacity>
         )}
